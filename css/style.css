@@ -152,24 +152,54 @@ h1, h2, h3, h4 {
     cursor: grabbing;
 }
 
-/* --- 修改后的核心词样式 --- */
-
-/* 这是用于顶部“仅供参考”的核心词样式 */
 .word-block.core-word-reference {
     background-color: #fffbe6;
     color: #856404;
     border: 1px solid #ffeeba;
-    cursor: default; /* 鼠标为默认样式，表示不可拖动 */
+    cursor: default;
 }
 
-/* 这是用于句子区里“可以拖动”的核心词样式 */
 .sentence-box .word-block.core-word {
     background-color: #fffbe6;
     color: #856404;
     border: 1px solid #ffeeba;
-    /* 它会自动继承 .word-block 的 cursor: grab 属性 */
 }
 
+/* --- 新增：页面底部的总提交区域样式 --- */
+.final-submission-container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 30px auto 0 auto; /* 顶部外边距，自动水平居中 */
+    padding: 25px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.generate-link-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.2s;
+}
+.generate-link-btn:hover {
+    background-color: #218838;
+}
+.result-link-input {
+    width: 95%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #f8f9fa;
+    font-size: 1em;
+}
 
 .back-link {
     margin-top: 30px;
