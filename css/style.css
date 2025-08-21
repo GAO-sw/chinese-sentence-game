@@ -1,84 +1,174 @@
-/* ...保留之前的样式... */
+/* --- 通用样式 --- */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f8ff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f9;
     color: #333;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 20px;
+    padding: 20px;
+    line-height: 1.6;
 }
 
-.game-container {
-    display: flex;
-    gap: 20px;
-    margin-top: 20px;
+h1, h2, h3, h4 {
+    text-align: center;
 }
+
+.lang-ru {
+    color: #557;
+    font-size: 0.9em;
+    display: block; /* 俄语换行显示 */
+    margin-top: 5px;
+}
+
+/* --- 目录页样式 --- */
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 90%;
+    max-width: 700px;
+}
+
+.lesson-link {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.lesson-link:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+.lesson-link .lang-zh {
+    color: #0056b3;
+    font-size: 1.25em;
+    font-weight: bold;
+}
+
+/* --- 游戏页样式 --- */
+.header {
+    width: 90%;
+    max-width: 1000px;
+    background-color: #fff;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+.header p {
+    text-align: center;
+}
+
+#game-board {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.question-container {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px;
+    margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.question-header .lang-zh { font-size: 1.5em; font-weight: bold; }
+.question-header .lang-ru { font-size: 1.2em; }
+.core-word-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.core-word-display .lang-ru { margin-top: 0; }
 
 .sentence-area, .word-pool-area {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
+.sentence-prompt, .word-pool-prompt {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+.sentence-prompt .lang-zh, .word-pool-prompt .lang-zh { font-size: 1.1em; }
 
 .word-box-container {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 10px;
+    padding: 15px;
     min-height: 60px;
-    min-width: 400px;
-    border: 2px dashed #ccc;
-    border-radius: 5px;
+    border: 2px dashed #d0dbe4;
+    border-radius: 8px;
+    background-color: #fafdff;
 }
+
+.word-pool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.word-category {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 5px 10px 10px 10px;
+    border: 1px solid #e9ecef;
+}
+.category-title {
+    font-size: 1em;
+    text-align: left;
+    margin-bottom: 10px;
+    color: #495057;
+}
+.category-title .lang-ru { display: inline; margin-left: 5px; }
 
 .word-block {
-    background-color: #add8e6;
-    color: #000;
-    padding: 10px 15px;
-    border-radius: 5px;
+    background-color: #e0f7ff;
+    color: #004085;
+    padding: 8px 14px;
+    border-radius: 6px;
     cursor: grab;
     user-select: none;
-}
-
-.core-word {
-    background-color: #ffd700;
-    cursor: not-allowed;
-}
-
-/* 新增的目录样式 */
-.list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 80%;
-    max-width: 600px;
-}
-
-.lesson-link {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
+    border: 1px solid #b8e7ff;
+    font-size: 1.1em;
     text-align: center;
-    text-decoration: none;
-    color: #0056b3;
-    font-size: 1.2em;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
+}
+.word-block:active {
+    cursor: grabbing;
 }
 
-.lesson-link:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+.word-block.core-word {
+    background-color: #fffbe6;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    cursor: default; /* 核心词默认不可拖动 */
 }
 
 .back-link {
     margin-top: 30px;
     display: inline-block;
-    background-color: #555;
+    background-color: #6c757d;
     color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 12px 25px;
+    border-radius: 8px;
     text-decoration: none;
+    transition: background-color 0.2s;
+}
+.back-link:hover {
+    background-color: #5a6268;
 }
