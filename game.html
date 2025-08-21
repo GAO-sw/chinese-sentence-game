@@ -23,4 +23,396 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="js/game.js"></script>
 </body>
-</html>
+</html>```
+*(注意：`game.html` 本身不需要修改，因为所有内容都是由 `js/game.js` 动态生成的。下面的 JS 代码会自动添加按钮和输入框。)*
+
+#### **2. 修改 `css/style.css` (提供完整代码)**
+
+我们需要为新的“提交区域”添加样式。请用下面的**完整代码**替换您现有的 `css/style.css` 文件。
+
+```css
+/* --- 通用样式 --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+    text-align: center;
+}
+
+.lang-ru {
+    color: #557;
+    font-size: 0.9em;
+    display: block; /* 俄语换行显示 */
+    margin-top: 5px;
+}
+
+/* --- 目录页样式 --- */
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 90%;
+    max-width: 700px;
+}
+
+.lesson-link {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.lesson-link:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+.lesson-link .lang-zh {
+    color: #0056b3;
+    font-size: 1.25em;
+    font-weight: bold;
+}
+
+/* --- 游戏页样式 --- */
+.header {
+    width: 90%;
+    max-width: 1000px;
+    background-color: #fff;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+.header p {
+    text-align: center;
+}
+
+#game-board {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.question-container {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px;
+    margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.question-header .lang-zh { font-size: 1.5em; font-weight: bold; }
+.question-header .lang-ru { font-size: 1.2em; }
+.core-word-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.core-word-display .lang-ru { margin-top: 0; }
+
+.sentence-area, .word-pool-area {
+    margin-bottom: 20px;
+}
+.sentence-prompt, .word-pool-prompt {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+.sentence-prompt .lang-zh, .word-pool-prompt .lang-zh { font-size: 1.1em; }
+
+.word-box-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+    min-height: 60px;
+    border: 2px dashed #d0dbe4;
+    border-radius: 8px;
+    background-color: #fafdff;
+}
+
+.word-pool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.word-category {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 5px 10px 10px 10px;
+    border: 1px solid #e9ecef;
+}
+.category-title {
+    font-size: 1em;
+    text-align: left;
+    margin-bottom: 10px;
+    color: #495057;
+}
+.category-title .lang-ru { display: inline; margin-left: 5px; }
+
+.word-block {
+    background-color: #e0f7ff;
+    color: #004085;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: grab;
+    user-select: none;
+    border: 1px solid #b8e7ff;
+    font-size: 1.1em;
+    text-align: center;
+}
+.word-block:active {
+    cursor: grabbing;
+}
+
+.word-block.core-word-reference {
+    background-color: #fffbe6;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    cursor: default;
+}
+
+.sentence-box .word-block.core-word {
+    background-color: #fffbe6;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+/* --- 新增：作业提交区域样式 --- */
+.submission-area {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+    text-align: center;
+}
+.generate-link-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: background-color 0.2s;
+}
+.generate-link-btn:hover {
+    background-color: #218838;
+}
+.result-link-input {
+    width: 95%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #f8f9fa;
+    font-size: 0.9em;
+}
+
+.back-link {
+    margin-top: 30px;
+    display: inline-block;
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+.back-link:hover {
+    background-color: #5a6268;
+}```
+
+#### **3. 修改 `js/game.js` (最关键的改动)**
+
+这个文件需要进行大改，以支持“从URL恢复句子”和“生成包含所有答案的URL”这两个核心功能。
+
+请用下面的**完整代码**替换您现有的 `js/game.js` 文件：```javascript
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const lessonId = params.get('lesson');
+
+    const lessonTitleEl = document.getElementById('lesson-title');
+    const lessonInstructionsEl = document.getElementById('lesson-instructions');
+    const gameBoard = document.getElementById('game-board');
+
+    if (!lessonId) {
+        // ... 错误处理 ...
+        return;
+    }
+
+    // --- 主函数：加载课程数据 ---
+    fetch(`data/${lessonId}.json`)
+        .then(response => response.json())
+        .then(data => {
+            // 设置课程标题和说明
+            lessonTitleEl.innerHTML = `<span class="lang-zh">${data.title.zh}</span><span class="lang-ru">${data.title.ru}</span>`;
+            lessonInstructionsEl.innerHTML = `<span class="lang-zh">${data.instructions.zh}</span><span class="lang-ru">${data.instructions.ru}</span>`;
+
+            // 为每一道题创建游戏界面
+            data.questions.forEach(question => {
+                buildQuestionUI(question);
+            });
+
+            // 为所有“生成链接”按钮添加事件监听器
+            document.querySelectorAll('.generate-link-btn').forEach(button => {
+                button.addEventListener('click', () => generateShareLink(button.dataset.questionId));
+            });
+        })
+        .catch(error => console.error('加载课程数据失败:', error));
+
+    // --- 函数：构建单道题的UI ---
+    function buildQuestionUI(question) {
+        const questionContainer = document.createElement('div');
+        questionContainer.classList.add('question-container');
+        questionContainer.id = `question-${question.id}`;
+
+        // 检查URL中是否有这道题的答案
+        const submittedAnswer = params.get(`q${question.id}`);
+        
+        let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`; // 默认句子区
+        let wordPool = { ...question.wordPool };
+
+        if (submittedAnswer) {
+            // 如果有答案，则根据答案重建句子区和备选区
+            const result = reconstructState(submittedAnswer, question.coreWord, wordPool);
+            sentenceWordsHTML = result.sentenceHTML;
+            wordPool = result.remainingWords;
+        }
+        
+        const questionHTML = `
+            <div class="question-header">
+                <!-- ... header ... -->
+            </div>
+            <div class="sentence-area">
+                <div id="sentence-box-${question.id}" class="word-box-container sentence-box">${sentenceWordsHTML}</div>
+            </div>
+            <div class="word-pool-area">
+                <div class="word-pool-grid">
+                    ${Object.keys(wordPool).map(category => `
+                        <div class="word-category">
+                            <h4 class="category-title">${category}</h4>
+                            <div id="pool-${question.id}-${category.replace(/\s|[()/]/g, '')}" class="word-box-container word-pool">
+                                ${wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="submission-area">
+                <button class="generate-link-btn" data-question-id="${question.id}">
+                    <span class="lang-zh">生成作业链接</span><span class="lang-ru">Сгенерировать ссылку</span>
+                </button>
+                <input type="text" id="result-link-${question.id}" class="result-link-input" readonly placeholder="点击上方按钮生成链接...">
+            </div>
+        `;
+        // (为了简洁，省略了部分重复的HTML，实际代码会完整生成)
+        
+        questionContainer.innerHTML = questionHTML.replace('<!-- ... header ... -->', `
+            <span class="lang-zh">第 ${question.id} 题</span><span class="lang-ru">Задание ${question.id}</span>
+            <div class="core-word-display">
+                <span class="lang-zh">核心词：</span><span class="lang-ru">Ключевое слово:</span>
+                <div class="word-block core-word-reference">${question.coreWord}</div>
+            </div>
+        `);
+        gameBoard.appendChild(questionContainer);
+        
+        // 初始化拖拽
+        initializeSortable(question.id);
+    }
+
+    // --- 函数：从URL恢复状态 ---
+    function reconstructState(answerStr, coreWord, initialWordPool) {
+        const sentenceWords = decodeURIComponent(answerStr).split(' ');
+        const sentenceHTML = sentenceWords.map(word => {
+            const isCore = word.endsWith('*');
+            const cleanWord = isCore ? word.slice(0, -1) : word;
+            const className = isCore ? 'word-block core-word' : 'word-block';
+            return `<div class="${className}">${cleanWord}</div>`;
+        }).join('');
+
+        // 从备选词库中移除已在句子中的词
+        const remainingWords = JSON.parse(JSON.stringify(initialWordPool));
+        sentenceWords.forEach(word => {
+            const cleanWord = word.endsWith('*') ? word.slice(0, -1) : word;
+            if (cleanWord === coreWord) return;
+            for (const category in remainingWords) {
+                const index = remainingWords[category].indexOf(cleanWord);
+                if (index > -1) {
+                    remainingWords[category].splice(index, 1);
+                    return;
+                }
+            }
+        });
+
+        return { sentenceHTML, remainingWords };
+    }
+
+    // --- 函数：初始化拖拽 ---
+    function initializeSortable(questionId) {
+        const sentenceBox = document.getElementById(`sentence-box-${questionId}`);
+        const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
+        const groupName = `group-${questionId}`;
+        
+        new Sortable(sentenceBox, {
+            group: groupName,
+            animation: 150,
+            onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
+        });
+        
+        wordPools.forEach(pool => new Sortable(pool, { group: groupName, animation: 150 }));
+    }
+
+    // --- 函数：生成分享链接 ---
+    function generateShareLink(activeQuestionId) {
+        const baseUrl = `${window.location.origin}${window.location.pathname}?lesson=${lessonId}`;
+        let paramsArray = [];
+
+        // 遍历页面上所有题目，获取它们的句子状态
+        document.querySelectorAll('.question-container').forEach(container => {
+            const qId = container.id.split('-')[1];
+            const sentenceBox = container.querySelector('.sentence-box');
+            
+            const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
+                let word = block.textContent;
+                if (block.classList.contains('core-word')) {
+                    word += '*'; // 标记核心词
+                }
+                return word;
+            });
+
+            // 只有当句子区不止有核心词时，才生成参数
+            if (words.length > 1 || (words.length === 1 && !words[0].endsWith('*'))) {
+                paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
+            }
+        });
+
+        const finalUrl = `${baseUrl}&${paramsArray.join('&')}`;
+        
+        const resultInput = document.getElementById(`result-link-${activeQuestionId}`);
+        resultInput.value = finalUrl;
+        resultInput.select();
+        
+        alert('链接已生成！请复制文本框中的链接并发送给老师。');
+    }
+});
