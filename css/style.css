@@ -152,12 +152,24 @@ h1, h2, h3, h4 {
     cursor: grabbing;
 }
 
-.word-block.core-word {
+/* --- 修改后的核心词样式 --- */
+
+/* 这是用于顶部“仅供参考”的核心词样式 */
+.word-block.core-word-reference {
     background-color: #fffbe6;
     color: #856404;
     border: 1px solid #ffeeba;
-    cursor: default; /* 核心词默认不可拖动 */
+    cursor: default; /* 鼠标为默认样式，表示不可拖动 */
 }
+
+/* 这是用于句子区里“可以拖动”的核心词样式 */
+.sentence-box .word-block.core-word {
+    background-color: #fffbe6;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    /* 它会自动继承 .word-block 的 cursor: grab 属性 */
+}
+
 
 .back-link {
     margin-top: 30px;
