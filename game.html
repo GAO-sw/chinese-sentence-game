@@ -2,22 +2,24 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>中文造句游戏</title>
+    <title>中文造句游戏 (Игра по составлению предложений)</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1 id="lesson-title">...加载中...</h1>
-    <div class="game-container">
-        <div class="sentence-area">
-            <h2>请将词汇拖拽到这里组成句子：</h2>
-            <div id="sentence-box" class="word-box-container"></div>
-        </div>
-        <div class="word-pool-area">
-            <h2>备选词汇区：</h2>
-            <div id="word-pool" class="word-box-container"></div>
-        </div>
+    <div class="header">
+        <h1 id="lesson-title">...</h1>
+        <p id="lesson-instructions">...</p>
     </div>
-    <a href="index.html" class="back-link">返回目录</a>
+    
+    <div id="game-board">
+        <!-- 游戏题目将由JavaScript动态生成在这里 -->
+    </div>
+
+    <a href="index.html" class="back-link">
+        <span class="lang-zh">返回目录</span>
+        <span class="lang-ru">Вернуться к списку</span>
+    </a>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="js/game.js"></script>
 </body>
