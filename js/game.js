@@ -1,16 +1,12 @@
-// js/game.js (最终优化版)
+// js/game.js (支持拖拽归还的最终版)
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const lessonId = params.get('lesson');
-
     const lessonTitleEl = document.getElementById('lesson-title');
     const lessonInstructionsEl = document.getElementById('lesson-instructions');
     const gameBoard = document.getElementById('game-board');
 
-    if (!lessonId) {
-        // ... (错误处理，保持不变)
-        return;
-    }
+    if (!lessonId) { /* ... 错误处理 ... */ return; }
 
     fetch(`data/${lessonId}.json`)
         .then(response => response.json())
@@ -18,18 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonTitleEl.innerHTML = `<span class="lang-zh">${data.title.zh}</span><span class="lang-ru">${data.title.ru}</span>`;
             lessonInstructionsEl.innerHTML = `<span class="lang-zh">${data.instructions.zh}</span><span class="lang-ru">${data.instructions.ru}</span>`;
 
-            // 1. 像以前一样，遍历并创建所有的题目UI
             data.questions.forEach(question => {
                 buildQuestionUI(question, params);
             });
             
-            // 2. 【新改动】在所有题目都创建完毕后，再创建唯一的提交区域
             createFinalSubmitArea(lessonId);
         })
-        .catch(error => {
-            console.error('加载课程数据失败:', error);
-            // ... (错误处理，保持不变)
-        });
+        .catch(error => { console.error('加载课程数据失败:', error); /* ... 错误处理 ... */ });
 });
 
 function buildQuestionUI(question, params) {
@@ -38,21 +29,18 @@ function buildQuestionUI(question, params) {
     questionContainer.classList.add('question-container');
     questionContainer.id = `question-${question.id}`;
 
-    // ... (这部分逻辑保持不变，用于恢复URL中的答案)
     const submittedAnswer = params.get(`q${question.id}`);
     let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`;
     let wordPool = JSON.parse(JSON.stringify(question.wordPool));
     if (submittedAnswer) {
         const result = reconstructState(submittedAnswer, question.coreWord, wordPool);
         sentenceWordsHTML = result.sentenceHTML;
-        wordPool = result.remainingWords;
     }
 
-    // --- 关键改动：移除了底部的 "submission-area" ---
+    // --- 改动：更新了提示文本 ---
     const questionHTML = `
         <div class="question-header">
-            <span class="lang-zh">第 ${question.id} 题</span>
-            <span class="lang-ru">Задание ${question.id}</span>
+            <span class="lang-zh">第 ${question.id} 题</span><span class="lang-ru">Задание ${question.id}</span>
             <div class="core-word-display">
                 <span class="lang-zh">核心词：</span><span class="lang-ru">Ключевое слово:</span>
                 <div class="word-block core-word-reference">${question.coreWord}</div>
@@ -60,13 +48,13 @@ function buildQuestionUI(question, params) {
         </div>
         <div class="sentence-area">
             <div class="sentence-prompt">
-                <span class="lang-zh">句子区：</span><span class="lang-ru">Зона для предложений:</span>
+                <span class="lang-zh">句子区 (将不需要的词拖回备选区即可删除)：</span><span class="lang-ru">Зона для предложений (перетащите ненужные слова обратно в банк слов для удаления):</span>
             </div>
             <div id="sentence-box-${question.id}" class="word-box-container sentence-box">${sentenceWordsHTML}</div>
         </div>
         <div class="word-pool-area">
             <div class="word-pool-prompt">
-                <span class="lang-zh">备选词库：</span><span class="lang-ru">Банк слов:</span>
+                <span class="lang-zh">备选词库 (可重复拖拽)：</span><span class="lang-ru">Банк слов (можно перетаскивать многократно):</span>
             </div>
             <div class="word-pool-grid">
                 ${Object.keys(wordPool).map(category => `
@@ -87,7 +75,44 @@ function buildQuestionUI(question, params) {
     initializeSortable(question.id);
 }
 
-// 【新增函数】用于创建页面底部的总提交区域
+function initializeSortable(questionId) {
+    const sentenceBox = document.getElementById(`sentence-box-${questionId}`);
+    const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
+    const groupName = `group-${questionId}`;
+    
+    // --- ★ 改动 1：句子区的配置中，移除了 onAdd 事件 ---
+    new Sortable(sentenceBox, {
+        group: groupName, 
+        animation: 150,
+        onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
+    });
+    
+    wordPools.forEach(pool => {
+        new Sortable(pool, {
+            // --- ★ 改动 2：修改了备选区的 group 配置 ---
+            group: {
+                name: groupName,
+                pull: 'clone', 
+                put: true // 允许词块被放入
+            },
+            animation: 150,
+            sort: false,
+            // --- ★ 改动 3：新增 onAdd 事件，实现“回收站”功能 ---
+            onAdd: function (evt) {
+                // 当任何词块被“添加”到这个备选区时，立即将其删除。
+                evt.item.remove();
+            }
+        });
+    });
+}
+
+// ... (createFinalSubmitArea, generateShareLink, reconstructState 函数保持不变) ...
+
+function createFinalSubmitArea(lessonId) { /* ... 代码不变 ... */ }
+function generateShareLink(lessonId) { /* ... 代码不变 ... */ }
+function reconstructState(answerStr, coreWord, initialWordPool) { /* ... 代码不变 ... */ }
+
+// --- 不变的代码部分 ---
 function createFinalSubmitArea(lessonId) {
     const gameBoard = document.getElementById('game-board');
     const submitContainer = document.createElement('div');
@@ -101,10 +126,8 @@ function createFinalSubmitArea(lessonId) {
         <input type="text" id="final-result-link" class="result-link-input" readonly placeholder="点击上方按钮生成一个包含所有题目答案的链接...">
     `;
 
-    // 将这个容器插入到所有题目(#game-board)的后面
     gameBoard.insertAdjacentElement('afterend', submitContainer);
 
-    // 为这个唯一的按钮绑定点击事件
     document.getElementById('generate-final-link-btn').addEventListener('click', () => {
         generateShareLink(lessonId);
     });
@@ -115,7 +138,7 @@ function generateShareLink(lessonId) {
     let paramsArray = [];
 
     document.querySelectorAll('.question-container').forEach(container => {
-        const qId = container.id.split('-')[1]; // 获取题目ID
+        const qId = container.id.split('-')[1];
         const sentenceBox = container.querySelector('.sentence-box');
         
         const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
@@ -126,7 +149,6 @@ function generateShareLink(lessonId) {
             return word;
         });
 
-        // 只有当句子区有内容时才生成参数 (至少有一个非核心词)
         if (words.length > 1 || (words.length === 1 && !words[0].endsWith('*'))) {
             paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
         }
@@ -134,7 +156,6 @@ function generateShareLink(lessonId) {
 
     const finalUrl = paramsArray.length > 0 ? `${baseUrl}&${paramsArray.join('&')}` : baseUrl;
     
-    // 更新唯一的那个输入框
     const finalInput = document.getElementById('final-result-link');
     finalInput.value = finalUrl;
     finalInput.select();
@@ -142,8 +163,6 @@ function generateShareLink(lessonId) {
     alert('总链接已生成！一个链接包含了所有题目的答案。请复制链接发给老师。');
 }
 
-
-// --- 其他辅助函数 (保持不变) ---
 function reconstructState(answerStr, coreWord, initialWordPool) {
     const sentenceWords = decodeURIComponent(answerStr).split(' ');
     const sentenceHTML = sentenceWords.map(word => {
@@ -153,30 +172,5 @@ function reconstructState(answerStr, coreWord, initialWordPool) {
         return `<div class="${className}">${cleanWord}</div>`;
     }).join('');
 
-    const remainingWords = initialWordPool;
-    sentenceWords.forEach(word => {
-        const cleanWord = word.endsWith('*') ? word.slice(0, -1) : word;
-        if (cleanWord === coreWord) return;
-        for (const category in remainingWords) {
-            const index = remainingWords[category].indexOf(cleanWord);
-            if (index > -1) {
-                remainingWords[category].splice(index, 1);
-                return;
-            }
-        }
-    });
-    return { sentenceHTML, remainingWords };
-}
-
-function initializeSortable(questionId) {
-    const sentenceBox = document.getElementById(`sentence-box-${questionId}`);
-    const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
-    const groupName = `group-${questionId}`;
-    
-    new Sortable(sentenceBox, {
-        group: groupName, animation: 150,
-        onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
-    });
-    
-    wordPools.forEach(pool => new Sortable(pool, { group: groupName, animation: 150 }));
+    return { sentenceHTML, remainingWords: initialWordPool };
 }
