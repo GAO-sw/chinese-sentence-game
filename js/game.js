@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonInstructionsEl.innerHTML = `<span class="lang-zh">${data.instructions.zh}</span><span class="lang-ru">${data.instructions.ru}</span>`;
 
             data.questions.forEach(question => {
+                // 为旧数据补充type字段以确保兼容性
+                if (!question.type) {
+                    question.type = 'build';
+                }
                 buildQuestionUI(question, params);
             });
             
@@ -39,11 +43,9 @@ function buildQuestionUI(question, params) {
     questionContainer.classList.add('question-container');
     questionContainer.id = `question-${question.id}`;
 
-    // 根据题目类型来决定如何构建UI
-    const questionType = question.type || 'build'; // 默认为旧的'build'类型
     let questionHTML = '';
 
-    switch (questionType) {
+    switch (question.type) {
         case 'sort':
             questionHTML = buildSortQuestion(question);
             break;
@@ -56,19 +58,24 @@ function buildQuestionUI(question, params) {
     questionContainer.innerHTML = questionHTML;
     gameBoard.appendChild(questionContainer);
     
-    // 初始化拖拽逻辑和事件监听器
     initializeSortable(question);
 
-    if (questionType === 'sort') {
+    if (question.type === 'sort') {
         const showAnswerBtn = questionContainer.querySelector(`#btn-answer-${question.id}`);
         const answerContainer = questionContainer.querySelector(`#answer-${question.id}`);
         showAnswerBtn.addEventListener('click', () => {
             answerContainer.classList.toggle('visible');
+            if (answerContainer.classList.contains('visible')) {
+                showAnswerBtn.querySelector('.lang-zh').textContent = '隐藏答案';
+                showAnswerBtn.querySelector('.lang-ru').textContent = 'Скрыть ответ';
+            } else {
+                showAnswerBtn.querySelector('.lang-zh').textContent = '显示答案';
+                showAnswerBtn.querySelector('.lang-ru').textContent = 'Показать ответ';
+            }
         });
     }
 }
 
-// 构建新的“排序题”HTML
 function buildSortQuestion(question) {
     const sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
 
@@ -94,7 +101,6 @@ function buildSortQuestion(question) {
     `;
 }
 
-// 构建旧的“造句题”HTML (代码从旧版buildQuestionUI迁移过来)
 function buildBuildQuestion(question, params) {
     const submittedAnswer = params.get(`q${question.id}`);
     let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`;
@@ -126,4 +132,111 @@ function buildBuildQuestion(question, params) {
                 ${Object.keys(wordPool).map(category => `
                     <div class="word-category">
                         <h4 class="category-title">${category}</h4>
-                        <div id="pool-${question.id}-${category.replace(/\s|[
+                        <div id="pool-${question.id}-${category.replace(/\s|[()/]/g, '')}" class="word-box-container word-pool">
+                            ${wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function initializeSortable(question) {
+    const questionId = question.id;
+    const sentenceBox = document.getElementById(`sentence-box-${questionId}`);
+    
+    if (question.type === 'sort') {
+        new Sortable(sentenceBox, {
+            animation: 150
+        });
+    } else { // 'build' type
+        const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
+        const groupName = `group-${questionId}`;
+        
+        new Sortable(sentenceBox, {
+            group: groupName, 
+            animation: 150,
+            onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
+        });
+        
+        wordPools.forEach(pool => {
+            new Sortable(pool, {
+                group: {
+                    name: groupName,
+                    pull: 'clone', 
+                    put: true
+                },
+                animation: 150,
+                sort: false,
+                onAdd: function (evt) {
+                    if (evt.to !== sentenceBox) {
+                        evt.item.remove();
+                    }
+                }
+            });
+        });
+    }
+}
+
+function createFinalSubmitArea(lessonId) {
+    const gameBoard = document.getElementById('game-board');
+    const submitContainer = document.createElement('div');
+    submitContainer.classList.add('final-submission-container');
+
+    submitContainer.innerHTML = `
+        <button id="generate-final-link-btn" class="generate-link-btn">
+            <span class="lang-zh">完成作业，生成总链接</span>
+            <span class="lang-ru">Завершить и сгенерировать ссылку</span>
+        </button>
+        <input type="text" id="final-result-link" class="result-link-input" readonly placeholder="点击上方按钮生成一个包含所有题目答案的链接...">
+    `;
+
+    gameBoard.insertAdjacentElement('afterend', submitContainer);
+
+    document.getElementById('generate-final-link-btn').addEventListener('click', () => {
+        generateShareLink(lessonId);
+    });
+}
+
+function generateShareLink(lessonId) {
+    const baseUrl = `${window.location.origin}${window.location.pathname}?lesson=${lessonId}`;
+    let paramsArray = [];
+
+    document.querySelectorAll('.question-container').forEach(container => {
+        const qId = container.id.split('-')[1];
+        const sentenceBox = container.querySelector('.sentence-box');
+        
+        const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
+            let word = block.textContent;
+            if (block.classList.contains('core-word')) {
+                word += '*';
+            }
+            return word;
+        });
+
+        if (words.length > 1 || (words.length === 1 && !words[0].endsWith('*'))) {
+            paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
+        }
+    });
+
+    const finalUrl = paramsArray.length > 0 ? `${baseUrl}&${paramsArray.join('&')}` : baseUrl;
+    
+    const finalInput = document.getElementById('final-result-link');
+    finalInput.value = finalUrl;
+    finalInput.select();
+    
+    alert('总链接已生成！一个链接包含了所有题目的答案。请复制链接发给老师。');
+}
+
+function reconstructState(answerStr, coreWord, initialWordPool) {
+    const sentenceWords = decodeURIComponent(answerStr).split(' ');
+    const sentenceHTML = sentenceWords.map(word => {
+        const isCore = word.endsWith('*');
+        const cleanWord = isCore ? word.slice(0, -1) : word;
+        const className = isCore ? 'word-block core-word' : 'word-block';
+        return `<div class="${className}">${cleanWord}</div>`;
+    }).join('');
+
+    return { sentenceHTML, remainingWords: initialWordPool };
+}
