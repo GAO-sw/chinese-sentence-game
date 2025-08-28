@@ -18,14 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonInstructionsEl.innerHTML = `<span class="lang-zh">${data.instructions.zh}</span><span class="lang-ru">${data.instructions.ru}</span>`;
 
             data.questions.forEach(question => {
-                // 为旧数据补充type字段以确保兼容性
-                if (!question.type) {
-                    question.type = 'build';
-                }
-                buildQuestionUI(question, params);
+                if (!question.type) question.type = 'build';
+                // Pass the lesson-wide flag to the UI builder
+                buildQuestionUI(question, params, data.show_answers);
             });
             
-            // 仅在课程数据中未明确禁用时才创建提交区域
             if (data.submission !== false) {
                 createFinalSubmitArea(lessonId);
             }
@@ -37,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 });
 
-function buildQuestionUI(question, params) {
+function buildQuestionUI(question, params, showAnswers) {
     const gameBoard = document.getElementById('game-board');
     const questionContainer = document.createElement('div');
     questionContainer.classList.add('question-container');
@@ -47,7 +44,8 @@ function buildQuestionUI(question, params) {
 
     switch (question.type) {
         case 'sort':
-            questionHTML = buildSortQuestion(question);
+            // Pass the flag down to the specific sort question builder
+            questionHTML = buildSortQuestion(question, showAnswers);
             break;
         case 'build':
         default:
@@ -60,7 +58,8 @@ function buildQuestionUI(question, params) {
     
     initializeSortable(question);
 
-    if (question.type === 'sort') {
+    // Only add the click listener if the button was actually created
+    if (question.type === 'sort' && showAnswers !== false) {
         const showAnswerBtn = questionContainer.querySelector(`#btn-answer-${question.id}`);
         const answerContainer = questionContainer.querySelector(`#answer-${question.id}`);
         showAnswerBtn.addEventListener('click', () => {
@@ -76,8 +75,24 @@ function buildQuestionUI(question, params) {
     }
 }
 
-function buildSortQuestion(question) {
+function buildSortQuestion(question, showAnswers) {
     const sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
+    
+    // Conditionally create the answer section HTML
+    let answerSectionHTML = '';
+    if (showAnswers !== false) {
+        answerSectionHTML = `
+            <div class="answer-reveal-section">
+                <button id="btn-answer-${question.id}" class="show-answer-btn">
+                    <span class="lang-zh">显示答案</span><span class="lang-ru">Показать ответ</span>
+                </button>
+                <div id="answer-${question.id}" class="answer-container">
+                    <div class="lang-zh">${question.answer.zh}</div>
+                    <div class="lang-ru">${question.answer.ru}</div>
+                </div>
+            </div>
+        `;
+    }
 
     return `
         <div class="question-header">
@@ -89,15 +104,7 @@ function buildSortQuestion(question) {
             </div>
             <div id="sentence-box-${question.id}" class="word-box-container sentence-box">${sentenceWordsHTML}</div>
         </div>
-        <div class="answer-reveal-section">
-            <button id="btn-answer-${question.id}" class="show-answer-btn">
-                <span class="lang-zh">显示答案</span><span class="lang-ru">Показать ответ</span>
-            </button>
-            <div id="answer-${question.id}" class="answer-container">
-                <div class="lang-zh">${question.answer.zh}</div>
-                <div class="lang-ru">${question.answer.ru}</div>
-            </div>
-        </div>
+        ${answerSectionHTML}
     `;
 }
 
@@ -195,6 +202,7 @@ function createFinalSubmitArea(lessonId) {
     gameBoard.insertAdjacentElement('afterend', submitContainer);
 
     document.getElementById('generate-final-link-btn').addEventListener('click', () => {
+        // For sort questions, we also need to encode the answer. The logic is simpler.
         generateShareLink(lessonId);
     });
 }
@@ -206,16 +214,23 @@ function generateShareLink(lessonId) {
     document.querySelectorAll('.question-container').forEach(container => {
         const qId = container.id.split('-')[1];
         const sentenceBox = container.querySelector('.sentence-box');
+        const questionType = document.getElementById(`question-${qId}`).querySelector('.word-pool-area') ? 'build' : 'sort';
         
-        const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
-            let word = block.textContent;
-            if (block.classList.contains('core-word')) {
-                word += '*';
-            }
-            return word;
-        });
+        let words = [];
+        if (questionType === 'build') {
+            words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
+                let word = block.textContent;
+                if (block.classList.contains('core-word')) {
+                    word += '*';
+                }
+                return word;
+            });
+        } else { // 'sort' type
+            words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => block.textContent);
+        }
 
-        if (words.length > 1 || (words.length === 1 && !words[0].endsWith('*'))) {
+        // Only add to params if there is an answer to submit
+        if (words.length > 0) {
             paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
         }
     });
