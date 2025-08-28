@@ -1,4 +1,3 @@
-// js/game.js (支持拖拽归还的最终版)
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const lessonId = params.get('lesson');
@@ -6,7 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const lessonInstructionsEl = document.getElementById('lesson-instructions');
     const gameBoard = document.getElementById('game-board');
 
-    if (!lessonId) { /* ... 错误处理 ... */ return; }
+    if (!lessonId) {
+        lessonTitleEl.innerHTML = `<span class="lang-zh">错误</span><span class="lang-ru">Ошибка</span>`;
+        lessonInstructionsEl.innerHTML = `<span class="lang-zh">未指定课程！</span><span class="lang-ru">Урок не указан!</span>`;
+        return;
+    }
 
     fetch(`data/${lessonId}.json`)
         .then(response => response.json())
@@ -18,9 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 buildQuestionUI(question, params);
             });
             
-            createFinalSubmitArea(lessonId);
+            // 仅在课程数据中未明确禁用时才创建提交区域
+            if (data.submission !== false) {
+                createFinalSubmitArea(lessonId);
+            }
         })
-        .catch(error => { console.error('加载课程数据失败:', error); /* ... 错误处理 ... */ });
+        .catch(error => {
+            console.error('加载课程数据失败:', error);
+            lessonTitleEl.innerHTML = `<span class="lang-zh">错误</span><span class="lang-ru">Ошибка</span>`;
+            lessonInstructionsEl.innerHTML = `<span class="lang-zh">加载课程数据失败！</span><span class="lang-ru">Не удалось загрузить данные урока!</span>`;
+        });
 });
 
 function buildQuestionUI(question, params) {
@@ -29,6 +39,63 @@ function buildQuestionUI(question, params) {
     questionContainer.classList.add('question-container');
     questionContainer.id = `question-${question.id}`;
 
+    // 根据题目类型来决定如何构建UI
+    const questionType = question.type || 'build'; // 默认为旧的'build'类型
+    let questionHTML = '';
+
+    switch (questionType) {
+        case 'sort':
+            questionHTML = buildSortQuestion(question);
+            break;
+        case 'build':
+        default:
+            questionHTML = buildBuildQuestion(question, params);
+            break;
+    }
+    
+    questionContainer.innerHTML = questionHTML;
+    gameBoard.appendChild(questionContainer);
+    
+    // 初始化拖拽逻辑和事件监听器
+    initializeSortable(question);
+
+    if (questionType === 'sort') {
+        const showAnswerBtn = questionContainer.querySelector(`#btn-answer-${question.id}`);
+        const answerContainer = questionContainer.querySelector(`#answer-${question.id}`);
+        showAnswerBtn.addEventListener('click', () => {
+            answerContainer.classList.toggle('visible');
+        });
+    }
+}
+
+// 构建新的“排序题”HTML
+function buildSortQuestion(question) {
+    const sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
+
+    return `
+        <div class="question-header">
+            <span class="lang-zh">第 ${question.id} 题</span><span class="lang-ru">Задание ${question.id}</span>
+        </div>
+        <div class="sentence-area">
+            <div class="sentence-prompt">
+                <span class="lang-zh">请排序 (拖拽词块调整顺序)：</span><span class="lang-ru">Отсортируйте слова (перетащите, чтобы изменить порядок):</span>
+            </div>
+            <div id="sentence-box-${question.id}" class="word-box-container sentence-box">${sentenceWordsHTML}</div>
+        </div>
+        <div class="answer-reveal-section">
+            <button id="btn-answer-${question.id}" class="show-answer-btn">
+                <span class="lang-zh">显示答案</span><span class="lang-ru">Показать ответ</span>
+            </button>
+            <div id="answer-${question.id}" class="answer-container">
+                <div class="lang-zh">${question.answer.zh}</div>
+                <div class="lang-ru">${question.answer.ru}</div>
+            </div>
+        </div>
+    `;
+}
+
+// 构建旧的“造句题”HTML (代码从旧版buildQuestionUI迁移过来)
+function buildBuildQuestion(question, params) {
     const submittedAnswer = params.get(`q${question.id}`);
     let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`;
     let wordPool = JSON.parse(JSON.stringify(question.wordPool));
@@ -37,8 +104,7 @@ function buildQuestionUI(question, params) {
         sentenceWordsHTML = result.sentenceHTML;
     }
 
-    // --- 改动：更新了提示文本 ---
-    const questionHTML = `
+    return `
         <div class="question-header">
             <span class="lang-zh">第 ${question.id} 题</span><span class="lang-ru">Задание ${question.id}</span>
             <div class="core-word-display">
@@ -60,117 +126,4 @@ function buildQuestionUI(question, params) {
                 ${Object.keys(wordPool).map(category => `
                     <div class="word-category">
                         <h4 class="category-title">${category}</h4>
-                        <div id="pool-${question.id}-${category.replace(/\s|[()/]/g, '')}" class="word-box-container word-pool">
-                            ${wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    questionContainer.innerHTML = questionHTML;
-    gameBoard.appendChild(questionContainer);
-    
-    initializeSortable(question.id);
-}
-
-function initializeSortable(questionId) {
-    const sentenceBox = document.getElementById(`sentence-box-${questionId}`);
-    const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
-    const groupName = `group-${questionId}`;
-    
-    // --- ★ 改动 1：句子区的配置中，移除了 onAdd 事件 ---
-    new Sortable(sentenceBox, {
-        group: groupName, 
-        animation: 150,
-        onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
-    });
-    
-    wordPools.forEach(pool => {
-        new Sortable(pool, {
-            // --- ★ 改动 2：修改了备选区的 group 配置 ---
-            group: {
-                name: groupName,
-                pull: 'clone', 
-                put: true // 允许词块被放入
-            },
-            animation: 150,
-            sort: false,
-            // --- ★ 改动 3：新增 onAdd 事件，实现“回收站”功能 ---
-            onAdd: function (evt) {
-                // 当任何词块被“添加”到这个备选区时，立即将其删除。
-                evt.item.remove();
-            }
-        });
-    });
-}
-
-// ... (createFinalSubmitArea, generateShareLink, reconstructState 函数保持不变) ...
-
-function createFinalSubmitArea(lessonId) { /* ... 代码不变 ... */ }
-function generateShareLink(lessonId) { /* ... 代码不变 ... */ }
-function reconstructState(answerStr, coreWord, initialWordPool) { /* ... 代码不变 ... */ }
-
-// --- 不变的代码部分 ---
-function createFinalSubmitArea(lessonId) {
-    const gameBoard = document.getElementById('game-board');
-    const submitContainer = document.createElement('div');
-    submitContainer.classList.add('final-submission-container');
-
-    submitContainer.innerHTML = `
-        <button id="generate-final-link-btn" class="generate-link-btn">
-            <span class="lang-zh">完成作业，生成总链接</span>
-            <span class="lang-ru">Завершить и сгенерировать ссылку</span>
-        </button>
-        <input type="text" id="final-result-link" class="result-link-input" readonly placeholder="点击上方按钮生成一个包含所有题目答案的链接...">
-    `;
-
-    gameBoard.insertAdjacentElement('afterend', submitContainer);
-
-    document.getElementById('generate-final-link-btn').addEventListener('click', () => {
-        generateShareLink(lessonId);
-    });
-}
-
-function generateShareLink(lessonId) {
-    const baseUrl = `${window.location.origin}${window.location.pathname}?lesson=${lessonId}`;
-    let paramsArray = [];
-
-    document.querySelectorAll('.question-container').forEach(container => {
-        const qId = container.id.split('-')[1];
-        const sentenceBox = container.querySelector('.sentence-box');
-        
-        const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
-            let word = block.textContent;
-            if (block.classList.contains('core-word')) {
-                word += '*';
-            }
-            return word;
-        });
-
-        if (words.length > 1 || (words.length === 1 && !words[0].endsWith('*'))) {
-            paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
-        }
-    });
-
-    const finalUrl = paramsArray.length > 0 ? `${baseUrl}&${paramsArray.join('&')}` : baseUrl;
-    
-    const finalInput = document.getElementById('final-result-link');
-    finalInput.value = finalUrl;
-    finalInput.select();
-    
-    alert('总链接已生成！一个链接包含了所有题目的答案。请复制链接发给老师。');
-}
-
-function reconstructState(answerStr, coreWord, initialWordPool) {
-    const sentenceWords = decodeURIComponent(answerStr).split(' ');
-    const sentenceHTML = sentenceWords.map(word => {
-        const isCore = word.endsWith('*');
-        const cleanWord = isCore ? word.slice(0, -1) : word;
-        const className = isCore ? 'word-block core-word' : 'word-block';
-        return `<div class="${className}">${cleanWord}</div>`;
-    }).join('');
-
-    return { sentenceHTML, remainingWords: initialWordPool };
-}
+                        <div id="pool-${question.id}-${category.replace(/\s|[
