@@ -214,3 +214,47 @@ h1, h2, h3, h4 {
 .back-link:hover {
     background-color: #5a6268;
 }
+/* --- 排序题 & 答案显示样式 --- */
+.answer-reveal-section {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+    text-align: center;
+}
+
+.show-answer-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.show-answer-btn:hover {
+    background-color: #0056b3;
+}
+
+.answer-container {
+    display: none; /* 默认隐藏 */
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    text-align: left;
+}
+.answer-container.visible {
+    display: block; /* 点击按钮后显示 */
+}
+
+.answer-container .lang-zh {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #28a745;
+}
+.answer-container .lang-ru {
+    font-size: 1.1em;
+    margin-top: 8px;
+}
