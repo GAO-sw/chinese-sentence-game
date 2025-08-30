@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonInstructionsEl.innerHTML = `<span class="lang-zh">${data.instructions.zh}</span><span class="lang-ru">${data.instructions.ru}</span>`;
 
             data.questions.forEach(question => {
+                // 为解释性卡片设置默认类型，以防JSON中忘记写
+                if (question.content && !question.type) question.type = 'explanation';
                 if (!question.type) question.type = 'build';
                 buildQuestionUI(question, params, data.show_answers);
             });
@@ -46,7 +48,11 @@ function buildQuestionUI(question, params, showAnswers) {
 
     let questionHTML = '';
 
+    // --- 这是核心修改部分 ---
     switch (question.type) {
+        case 'explanation':
+            questionHTML = buildExplanationCard(question);
+            break;
         case 'sort':
             questionHTML = buildSortQuestion(question, params, showAnswers);
             break;
@@ -55,11 +61,15 @@ function buildQuestionUI(question, params, showAnswers) {
             questionHTML = buildBuildQuestion(question, params);
             break;
     }
+    // --- 修改结束 ---
     
     questionContainer.innerHTML = questionHTML;
     gameBoard.appendChild(questionContainer);
     
-    initializeSortable(question);
+    // 只有在非解释性卡片时才初始化拖拽功能
+    if (question.type === 'sort' || question.type === 'build') {
+        initializeSortable(question);
+    }
 
     if (question.type === 'sort' && showAnswers !== false) {
         const showAnswerBtn = questionContainer.querySelector(`#btn-answer-${question.id}`);
@@ -76,6 +86,26 @@ function buildQuestionUI(question, params, showAnswers) {
         });
     }
 }
+
+// --- 这是新增的函数 ---
+function buildExplanationCard(question) {
+    let contentHTML = question.content.map(line => `
+        <p>
+            <span class="lang-zh">${line.zh}</span>
+            <span class="lang-ru">${line.ru}</span>
+        </p>
+    `).join('');
+
+    return `
+        <div class="question-header">
+            <span class="lang-zh">第 ${question.id} 部分: 学习与理解</span>
+            <span class="lang-ru">Часть ${question.id}: Изучение и понимание</span>
+        </div>
+        <div class="explanation-content">${contentHTML}</div>
+    `;
+}
+// --- 新增函数结束 ---
+
 
 function buildSortQuestion(question, params, showAnswers) {
     const submittedAnswer = params.get(`q${question.id}`);
@@ -105,7 +135,7 @@ function buildSortQuestion(question, params, showAnswers) {
 
     return `
         <div class="question-header">
-            <span class="lang-zh">第 ${question.id} 题</span><span class="lang-ru">Задание ${question.id}</span>
+            <span class="lang-zh">第 ${question.id} 题: 排序</span><span class="lang-ru">Задание ${question.id}: Сортировка</span>
         </div>
         <div class="sentence-area">
             <div class="sentence-prompt">
@@ -119,8 +149,15 @@ function buildSortQuestion(question, params, showAnswers) {
 
 function buildBuildQuestion(question, params) {
     const submittedAnswer = params.get(`q${question.id}`);
+    // 如果有情景描述，就显示它
+    const descriptionHTML = question.description ? `
+        <div class="sentence-prompt">
+            <span class="lang-zh">${question.description.zh}</span>
+            <span class="lang-ru">${question.description.ru}</span>
+        </div>
+    ` : '';
+
     let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`;
-    let wordPool = JSON.parse(JSON.stringify(question.wordPool));
     if (submittedAnswer) {
         const result = reconstructState(submittedAnswer, question.coreWord);
         sentenceWordsHTML = result.sentenceHTML;
@@ -128,12 +165,13 @@ function buildBuildQuestion(question, params) {
 
     return `
         <div class="question-header">
-            <span class="lang-zh">第 ${question.id} 题</span><span class="lang-ru">Задание ${question.id}</span>
+            <span class="lang-zh">第 ${question.id} 题: 造句</span><span class="lang-ru">Задание ${question.id}: Составление предложения</span>
             <div class="core-word-display">
                 <span class="lang-zh">核心词：</span><span class="lang-ru">Ключевое слово:</span>
                 <div class="word-block core-word-reference">${question.coreWord}</div>
             </div>
         </div>
+        ${descriptionHTML}
         <div class="sentence-area">
             <div class="sentence-prompt">
                 <span class="lang-zh">句子区 (将不需要的词拖回备选区即可删除)：</span><span class="lang-ru">Зона для предложений (перетащите ненужные слова обратно в банк слов для удаления):</span>
@@ -145,11 +183,11 @@ function buildBuildQuestion(question, params) {
                 <span class="lang-zh">备选词库 (可重复拖拽)：</span><span class="lang-ru">Банк слов (можно перетаскивать многократно):</span>
             </div>
             <div class="word-pool-grid">
-                ${Object.keys(wordPool).map(category => `
+                ${Object.keys(question.wordPool).map(category => `
                     <div class="word-category">
                         <h4 class="category-title">${category}</h4>
                         <div id="pool-${question.id}-${category.replace(/\s|[()/]/g, '')}" class="word-box-container word-pool">
-                            ${wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}
+                            ${question.wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}
                         </div>
                     </div>
                 `).join('')}
@@ -223,16 +261,19 @@ function generateShareLink(lessonId) {
         const qId = container.id.split('-')[1];
         const sentenceBox = container.querySelector('.sentence-box');
         
-        const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
-            let word = block.textContent;
-            if (block.classList.contains('core-word')) {
-                word += '*';
-            }
-            return word;
-        });
+        // 只有练习题有sentenceBox，解释性卡片没有，需要判断
+        if (sentenceBox) {
+            const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
+                let word = block.textContent;
+                if (block.classList.contains('core-word')) {
+                    word += '*';
+                }
+                return word;
+            });
 
-        if (words.length > 0) {
-            paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
+            if (words.length > 0) {
+                paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
+            }
         }
     });
 
