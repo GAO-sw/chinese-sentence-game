@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             data.questions.forEach(question => {
                 if (!question.type) question.type = 'build';
-                // Pass the lesson-wide flag to the UI builder
                 buildQuestionUI(question, params, data.show_answers);
             });
             
@@ -44,8 +43,8 @@ function buildQuestionUI(question, params, showAnswers) {
 
     switch (question.type) {
         case 'sort':
-            // Pass the flag down to the specific sort question builder
-            questionHTML = buildSortQuestion(question, showAnswers);
+            // 传入 params 以便函数可以读取答案
+            questionHTML = buildSortQuestion(question, params, showAnswers);
             break;
         case 'build':
         default:
@@ -58,7 +57,6 @@ function buildQuestionUI(question, params, showAnswers) {
     
     initializeSortable(question);
 
-    // Only add the click listener if the button was actually created
     if (question.type === 'sort' && showAnswers !== false) {
         const showAnswerBtn = questionContainer.querySelector(`#btn-answer-${question.id}`);
         const answerContainer = questionContainer.querySelector(`#answer-${question.id}`);
@@ -75,10 +73,20 @@ function buildQuestionUI(question, params, showAnswers) {
     }
 }
 
-function buildSortQuestion(question, showAnswers) {
-    const sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
+// *** 这是被修复的核心函数 ***
+function buildSortQuestion(question, params, showAnswers) {
+    const submittedAnswer = params.get(`q${question.id}`);
+    let sentenceWordsHTML = '';
+
+    if (submittedAnswer) {
+        // 如果URL中有答案，则根据答案来生成词块顺序
+        const words = decodeURIComponent(submittedAnswer).split(' ');
+        sentenceWordsHTML = words.map(word => `<div class="word-block">${word}</div>`).join('');
+    } else {
+        // 如果URL中没有答案，则使用默认的打乱顺序
+        sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
+    }
     
-    // Conditionally create the answer section HTML
     let answerSectionHTML = '';
     if (showAnswers !== false) {
         answerSectionHTML = `
@@ -113,7 +121,7 @@ function buildBuildQuestion(question, params) {
     let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`;
     let wordPool = JSON.parse(JSON.stringify(question.wordPool));
     if (submittedAnswer) {
-        const result = reconstructState(submittedAnswer, question.coreWord, wordPool);
+        const result = reconstructState(submittedAnswer, question.coreWord);
         sentenceWordsHTML = result.sentenceHTML;
     }
 
@@ -202,7 +210,6 @@ function createFinalSubmitArea(lessonId) {
     gameBoard.insertAdjacentElement('afterend', submitContainer);
 
     document.getElementById('generate-final-link-btn').addEventListener('click', () => {
-        // For sort questions, we also need to encode the answer. The logic is simpler.
         generateShareLink(lessonId);
     });
 }
@@ -214,22 +221,15 @@ function generateShareLink(lessonId) {
     document.querySelectorAll('.question-container').forEach(container => {
         const qId = container.id.split('-')[1];
         const sentenceBox = container.querySelector('.sentence-box');
-        const questionType = document.getElementById(`question-${qId}`).querySelector('.word-pool-area') ? 'build' : 'sort';
         
-        let words = [];
-        if (questionType === 'build') {
-            words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
-                let word = block.textContent;
-                if (block.classList.contains('core-word')) {
-                    word += '*';
-                }
-                return word;
-            });
-        } else { // 'sort' type
-            words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => block.textContent);
-        }
+        const words = Array.from(sentenceBox.querySelectorAll('.word-block')).map(block => {
+            let word = block.textContent;
+            if (block.classList.contains('core-word')) {
+                word += '*';
+            }
+            return word;
+        });
 
-        // Only add to params if there is an answer to submit
         if (words.length > 0) {
             paramsArray.push(`q${qId}=${encodeURIComponent(words.join(' '))}`);
         }
@@ -244,7 +244,7 @@ function generateShareLink(lessonId) {
     alert('总链接已生成！一个链接包含了所有题目的答案。请复制链接发给老师。');
 }
 
-function reconstructState(answerStr, coreWord, initialWordPool) {
+function reconstructState(answerStr, coreWord) {
     const sentenceWords = decodeURIComponent(answerStr).split(' ');
     const sentenceHTML = sentenceWords.map(word => {
         const isCore = word.endsWith('*');
@@ -253,5 +253,5 @@ function reconstructState(answerStr, coreWord, initialWordPool) {
         return `<div class="${className}">${cleanWord}</div>`;
     }).join('');
 
-    return { sentenceHTML, remainingWords: initialWordPool };
+    return { sentenceHTML };
 }
