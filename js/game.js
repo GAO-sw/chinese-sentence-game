@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('页面加载完成，开始执行 game.js'); // 诊断日志
     const params = new URLSearchParams(window.location.search);
     const lessonId = params.get('lesson');
     const lessonTitleEl = document.getElementById('lesson-title');
@@ -7,23 +6,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameBoard = document.getElementById('game-board');
 
     if (!lessonId) {
-        console.error('错误：URL中未找到 lesson ID'); // 诊断日志
         lessonTitleEl.innerHTML = `<span class="lang-zh">错误</span><span class="lang-ru">Ошибка</span>`;
         lessonInstructionsEl.innerHTML = `<span class="lang-zh">未指定课程！</span><span class="lang-ru">Урок не указан!</span>`;
         return;
     }
-    console.log('课程 ID:', lessonId); // 诊断日志
 
     fetch(`data/${lessonId}.json`)
         .then(response => {
             if (!response.ok) {
-                // 如果fetch失败（例如404 Not Found），在这里抛出错误
                 throw new Error(`无法加载课程文件: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('成功加载并解析了课程JSON文件:', data); // 诊断日志
             lessonTitleEl.innerHTML = `<span class="lang-zh">${data.title.zh}</span><span class="lang-ru">${data.title.ru}</span>`;
             lessonInstructionsEl.innerHTML = `<span class="lang-zh">${data.instructions.zh}</span><span class="lang-ru">${data.instructions.ru}</span>`;
 
@@ -37,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
         .catch(error => {
-            console.error('加载或解析课程数据失败:', error); // 诊断日志
+            console.error('加载或解析课程数据失败:', error);
             lessonTitleEl.innerHTML = `<span class="lang-zh">错误</span><span class="lang-ru">Ошибка</span>`;
             lessonInstructionsEl.innerHTML = `<span class="lang-zh">加载课程数据失败！</span><span class="lang-ru">Не удалось загрузить данные урока!</span>`;
         });
@@ -53,12 +48,10 @@ function buildQuestionUI(question, params, showAnswers) {
 
     switch (question.type) {
         case 'sort':
-            console.log(`正在为排序题 #${question.id} 构建UI`); // 诊断日志
             questionHTML = buildSortQuestion(question, params, showAnswers);
             break;
         case 'build':
         default:
-            console.log(`正在为造句题 #${question.id} 构建UI`); // 诊断日志
             questionHTML = buildBuildQuestion(question, params);
             break;
     }
@@ -86,16 +79,12 @@ function buildQuestionUI(question, params, showAnswers) {
 
 function buildSortQuestion(question, params, showAnswers) {
     const submittedAnswer = params.get(`q${question.id}`);
-    console.log(`排序题 #${question.id} - 从URL中获取的答案:`, submittedAnswer); // 关键诊断日志
-
     let sentenceWordsHTML = '';
 
     if (submittedAnswer) {
-        console.log(`排序题 #${question.id} - 发现已提交答案，正在使用它来构建词块。`); // 诊断日志
         const words = decodeURIComponent(submittedAnswer).split(' ');
         sentenceWordsHTML = words.map(word => `<div class="word-block">${word}</div>`).join('');
     } else {
-        console.log(`排序题 #${question.id} - 未发现已提交答案，使用默认乱序。`); // 诊断日志
         sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
     }
     
@@ -127,25 +116,6 @@ function buildSortQuestion(question, params, showAnswers) {
         ${answerSectionHTML}
     `;
 }
-
-// 以下函数与上一版相同，为保证完整性全部提供
-function buildBuildQuestion(question, params) {
-    const submittedAnswer = params.get(`q${question.id}`);
-    let sentenceWordsHTML = `<div class="word-block core-word">${question.coreWord}</div>`;
-    let wordPool = JSON.parse(JSON.stringify(question.wordPool));
-    if (submittedAnswer) {
-        const result = reconstructState(submittedAnswer, question.coreWord);
-        sentenceWordsHTML = result.sentenceHTML;
-    }
-    return `...`; // 省略，与之前版本一致
-}
-
-function initializeSortable(question) { /* ...与之前版本一致... */ }
-function createFinalSubmitArea(lessonId) { /* ...与之前版本一致... */ }
-function generateShareLink(lessonId) { /* ...与之前版本一致... */ }
-function reconstructState(answerStr, coreWord) { /* ...与之前版本一致... */ }
-
-// --- 为了确保您能完整替换，我将所有函数都列出来 ---
 
 function buildBuildQuestion(question, params) {
     const submittedAnswer = params.get(`q${question.id}`);
