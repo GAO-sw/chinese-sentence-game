@@ -42,12 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
 function buildQuestionUI(question, params) {
     const gameBoard = document.getElementById('game-board');
     const questionContainer = document.createElement('div');
-    questionContainer.classList.add('question-container');
+    // --- NEW: Flashcard tests don't need the standard container style ---
+    if (question.type !== 'flashcard') {
+        questionContainer.classList.add('question-container');
+    }
     questionContainer.id = `question-${question.id}`;
 
     let questionHTML = '';
 
+    // --- NEW: Add 'flashcard' type to the switch ---
     switch (question.type) {
+        case 'flashcard':
+            questionHTML = buildFlashcardGrid(question);
+            break;
         case 'explanation':
             questionHTML = buildExplanationCard(question);
             break;
@@ -67,7 +74,16 @@ function buildQuestionUI(question, params) {
         initializeSortable(question);
     }
 
-    // --- 核心修改：让所有带答案的题型都能显示答案 ---
+    // --- NEW: Add click listener for flashcards ---
+    if (question.type === 'flashcard') {
+        const cards = questionContainer.querySelectorAll('.flashcard');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('is-flipped');
+            });
+        });
+    }
+
     if (question.answer) {
         const showAnswerBtn = questionContainer.querySelector(`#btn-answer-${question.id}`);
         const answerContainer = questionContainer.querySelector(`#answer-${question.id}`);
@@ -88,24 +104,30 @@ function buildQuestionUI(question, params) {
     }
 }
 
+// --- NEW: Function to build the flashcard grid ---
+function buildFlashcardGrid(question) {
+    let cardsHTML = question.cards.map(card => `
+        <div class="flashcard">
+            <div class="flashcard-zh">${card.zh}</div>
+            <div class="flashcard-ru">${card.ru}</div>
+        </div>
+    `).join('');
+
+    return `<div class="flashcard-grid">${cardsHTML}</div>`;
+}
+
 function buildExplanationCard(question) {
-    // 将\n替换为<br>以支持换行
     let contentHTML = question.content.map(line => {
         const zh = line.zh.replace(/\n/g, '<br>');
         const ru = line.ru.replace(/\n/g, '<br>');
         return `<p><span class="lang-zh">${zh}</span><span class="lang-ru">${ru}</span></p>`;
     }).join('');
 
-    return `
-        <div class="explanation-content">${contentHTML}</div>
-    `;
+    return `<div class="explanation-content">${contentHTML}</div>`;
 }
 
-// --- 核心修改：抽离出答案区域的HTML生成函数 ---
 function buildAnswerSectionHTML(question) {
     if (!question.answer) return '';
-
-    // 如果俄语答案不存在，则不显示该行
     const ruAnswerHTML = question.answer.ru ? `<div class="lang-ru">${question.answer.ru}</div>` : '';
     
     return `
@@ -203,16 +225,14 @@ function initializeSortable(question) {
     
     if (question.type === 'sort') {
         new Sortable(sentenceBox, { animation: 150 });
-    } else { // 'build' type
+    } else {
         const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
         const groupName = `group-${questionId}`;
-        
         new Sortable(sentenceBox, {
             group: groupName, 
             animation: 150,
             onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
         });
-        
         wordPools.forEach(pool => {
             new Sortable(pool, {
                 group: { name: groupName, pull: 'clone', put: true },
@@ -230,13 +250,7 @@ function createFinalSubmitArea(lessonId) {
     const gameBoard = document.getElementById('game-board');
     const submitContainer = document.createElement('div');
     submitContainer.classList.add('final-submission-container');
-    submitContainer.innerHTML = `
-        <button id="generate-final-link-btn" class="generate-link-btn">
-            <span class="lang-zh">完成作业，生成总链接</span>
-            <span class="lang-ru">Завершить и сгенерировать ссылку</span>
-        </button>
-        <input type="text" id="final-result-link" class="result-link-input" readonly placeholder="点击上方按钮生成一个包含所有题目答案的链接...">
-    `;
+    submitContainer.innerHTML = `<button id="generate-final-link-btn" class="generate-link-btn"><span class="lang-zh">完成作业，生成总链接</span><span class="lang-ru">Завершить и сгенерировать ссылку</span></button><input type="text" id="final-result-link" class="result-link-input" readonly placeholder="点击上方按钮生成一个包含所有题目答案的链接...">`;
     gameBoard.insertAdjacentElement('afterend', submitContainer);
     document.getElementById('generate-final-link-btn').addEventListener('click', () => generateShareLink(lessonId));
 }
