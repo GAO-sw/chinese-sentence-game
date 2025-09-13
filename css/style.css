@@ -258,3 +258,56 @@ h1, h2, h3, h4 {
     font-size: 1.1em;
     margin-top: 8px;
 }
+/* --- 单词卡片测试样式 --- */
+.flashcard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    width: 90%;
+    max-width: 1000px;
+    margin: 20px auto;
+}
+
+.flashcard {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+    user-select: none;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.flashcard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.flashcard-zh {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #0056b3;
+    line-height: 1.3;
+}
+
+.flashcard-ru {
+    display: none; /* 默认隐藏俄语 */
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: #495057;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 10px;
+}
+
+.flashcard.is-flipped .flashcard-ru {
+    display: block; /* 点击后显示俄语 */
+}
+
+.flashcard.is-flipped {
+    background-color: #eef8ff;
+}
