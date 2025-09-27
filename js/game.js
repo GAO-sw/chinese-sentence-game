@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function buildQuestionUI(question, params) {
     const gameBoard = document.getElementById('game-board');
-    // --- 修正点 1: 统一容器逻辑 ---
     const questionWrapper = document.createElement('div');
     questionWrapper.id = `question-${question.id}`;
     if (question.type !== 'flashcard' && question.type !== 'explanation') {
@@ -87,8 +86,6 @@ function buildQuestionUI(question, params) {
         }
     }
 }
-
-// --- 所有 build... 函数保持不变，但为了完整性全部提供 ---
 
 function buildListeningExercise(question) {
     let itemsHTML = question.sentences.map((sentence, index) => `<div class="listening-item"><div class="listening-header"><span class="lang-zh">第 ${index + 1} 句</span><span class="lang-ru">Предложение ${index + 1}</span></div><button class="listening-reveal-btn"><span class="lang-zh">显示文本</span><span class="lang-ru">Показать текст</span></button><div class="listening-content"><p class="lang-zh">${sentence.zh}</p><p class="lang-ru">${sentence.ru}</p></div></div>`).join('');
@@ -154,7 +151,6 @@ function createFinalSubmitArea(lessonId) {
 function generateShareLink(lessonId) {
     const baseUrl = `${window.location.origin}${window.location.pathname}?lesson=${lessonId}`;
     let paramsArray = [];
-    // --- 修正点 2: 通过更可靠的方式查找容器 ---
     document.querySelectorAll('[id^="question-"]').forEach(container => {
         const qId = container.id.split('-')[1];
         const sentenceBox = container.querySelector('.sentence-box');
