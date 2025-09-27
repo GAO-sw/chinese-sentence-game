@@ -58,3 +58,70 @@
     max-height: 0;
     padding-top: 0;
 }
+/* --- 听力练习样式 --- */
+.listening-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.listening-item {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.listening-header {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-right: 20px;
+}
+
+.listening-reveal-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+}
+
+.listening-reveal-btn:hover {
+    background-color: #0056b3;
+}
+
+.listening-content {
+    display: none; /* 默认隐藏 */
+    width: 100%;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.listening-content.visible {
+    display: block; /* 点击后显示 */
+}
+
+.listening-content p {
+    margin: 0 0 8px 0;
+}
+
+.listening-content .lang-zh {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
+.listening-content .lang-ru {
+    font-size: 1.1em;
+    color: #557;
+}
