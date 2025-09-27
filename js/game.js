@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function buildQuestionUI(question, params) {
     const gameBoard = document.getElementById('game-board');
     const questionContainer = document.createElement('div');
-    // --- NEW: Flashcard tests don't need the standard container style ---
     if (question.type !== 'flashcard') {
         questionContainer.classList.add('question-container');
     }
@@ -50,8 +49,10 @@ function buildQuestionUI(question, params) {
 
     let questionHTML = '';
 
-    // --- NEW: Add 'flashcard' type to the switch ---
     switch (question.type) {
+        case 'listening':
+            questionHTML = buildListeningExercise(question);
+            break;
         case 'flashcard':
             questionHTML = buildFlashcardGrid(question);
             break;
@@ -74,12 +75,28 @@ function buildQuestionUI(question, params) {
         initializeSortable(question);
     }
 
-    // --- NEW: Add click listener for flashcards ---
     if (question.type === 'flashcard') {
         const cards = questionContainer.querySelectorAll('.flashcard');
-        cards.forEach(card => {
-            card.addEventListener('click', () => {
-                card.classList.toggle('is-flipped');
+        cards.forEach(card => card.addEventListener('click', () => card.classList.toggle('is-flipped')));
+    }
+
+    // --- NEW: Add click listener for listening exercises ---
+    if (question.type === 'listening') {
+        const items = questionContainer.querySelectorAll('.listening-item');
+        items.forEach(item => {
+            const btn = item.querySelector('.listening-reveal-btn');
+            const content = item.querySelector('.listening-content');
+            btn.addEventListener('click', () => {
+                content.classList.toggle('visible');
+                const zh_btn = btn.querySelector('.lang-zh');
+                const ru_btn = btn.querySelector('.lang-ru');
+                if(content.classList.contains('visible')){
+                    zh_btn.textContent = '隐藏文本';
+                    ru_btn.textContent = 'Скрыть текст';
+                } else {
+                    zh_btn.textContent = '显示文本';
+                    ru_btn.textContent = 'Показать текст';
+                }
             });
         });
     }
@@ -104,7 +121,39 @@ function buildQuestionUI(question, params) {
     }
 }
 
-// --- NEW: Function to build the flashcard grid ---
+// --- NEW: Function to build the listening exercise ---
+function buildListeningExercise(question) {
+    let itemsHTML = question.sentences.map((sentence, index) => `
+        <div class="listening-item">
+            <div class="listening-header">
+                <span class="lang-zh">第 ${index + 1} 句</span>
+                <span class="lang-ru">Предложение ${index + 1}</span>
+            </div>
+            <button class="listening-reveal-btn">
+                <span class="lang-zh">显示文本</span>
+                <span class="lang-ru">Показать текст</span>
+            </button>
+            <div class="listening-content">
+                <p class="lang-zh">${sentence.zh}</p>
+                <p class="lang-ru">${sentence.ru}</p>
+            </div>
+        </div>
+    `).join('');
+
+    return `
+        <div class="question-header">
+            <span class="lang-zh">${question.title.zh}</span>
+            <span class="lang-ru">${question.title.ru}</span>
+        </div>
+        <div class="sentence-prompt">
+            <span class="lang-zh">${question.description.zh}</span>
+            <span class="lang-ru">${question.description.ru}</span>
+        </div>
+        <div class="listening-grid">${itemsHTML}</div>
+    `;
+}
+
+
 function buildFlashcardGrid(question) {
     let cardsHTML = question.cards.map(card => `
         <div class="flashcard">
@@ -112,7 +161,6 @@ function buildFlashcardGrid(question) {
             <div class="flashcard-ru">${card.ru}</div>
         </div>
     `).join('');
-
     return `<div class="flashcard-grid">${cardsHTML}</div>`;
 }
 
@@ -122,14 +170,12 @@ function buildExplanationCard(question) {
         const ru = line.ru.replace(/\n/g, '<br>');
         return `<p><span class="lang-zh">${zh}</span><span class="lang-ru">${ru}</span></p>`;
     }).join('');
-
     return `<div class="explanation-content">${contentHTML}</div>`;
 }
 
 function buildAnswerSectionHTML(question) {
     if (!question.answer) return '';
     const ruAnswerHTML = question.answer.ru ? `<div class="lang-ru">${question.answer.ru}</div>` : '';
-    
     return `
         <div class="answer-reveal-section">
             <button id="btn-answer-${question.id}" class="show-answer-btn">
@@ -146,14 +192,12 @@ function buildAnswerSectionHTML(question) {
 function buildSortQuestion(question, params) {
     const submittedAnswer = params.get(`q${question.id}`);
     let sentenceWordsHTML = '';
-
     if (submittedAnswer) {
         const words = decodeURIComponent(submittedAnswer).split(' ');
         sentenceWordsHTML = words.map(word => `<div class="word-block">${word}</div>`).join('');
     } else {
         sentenceWordsHTML = question.scrambled_words.map(word => `<div class="word-block">${word}</div>`).join('');
     }
-    
     return `
         <div class="question-header">
             <span class="lang-zh">${question.description.zh}</span><span class="lang-ru">${question.description.ru}</span>
@@ -167,53 +211,18 @@ function buildSortQuestion(question, params) {
 
 function buildBuildQuestion(question, params) {
     const submittedAnswer = params.get(`q${question.id}`);
-    const descriptionHTML = question.description ? `
-        <div class="sentence-prompt">
-            <span class="lang-zh">${question.description.zh}</span>
-            <span class="lang-ru">${question.description.ru}</span>
-        </div>
-    ` : '';
-
+    const descriptionHTML = question.description ? `<div class="sentence-prompt"><span class="lang-zh">${question.description.zh}</span><span class="lang-ru">${question.description.ru}</span></div>` : '';
     let sentenceWordsHTML = question.coreWord ? `<div class="word-block core-word">${question.coreWord}</div>` : '';
     if (submittedAnswer) {
         const result = reconstructState(submittedAnswer, question.coreWord);
         sentenceWordsHTML = result.sentenceHTML;
     }
-    
-    const coreWordDisplay = question.coreWord ? `
-        <div class="core-word-display">
-            <span class="lang-zh">核心词：</span><span class="lang-ru">Ключевое слово:</span>
-            <div class="word-block core-word-reference">${question.coreWord}</div>
-        </div>
-    ` : '';
-
+    const coreWordDisplay = question.coreWord ? `<div class="core-word-display"><span class="lang-zh">核心词：</span><span class="lang-ru">Ключевое слово:</span><div class="word-block core-word-reference">${question.coreWord}</div></div>` : '';
     return `
-        <div class="question-header">
-             <span class="lang-zh">${question.title.zh}</span><span class="lang-ru">${question.title.ru}</span>
-             ${coreWordDisplay}
-        </div>
+        <div class="question-header"><span class="lang-zh">${question.title.zh}</span><span class="lang-ru">${question.title.ru}</span>${coreWordDisplay}</div>
         ${descriptionHTML}
-        <div class="sentence-area">
-            <div class="sentence-prompt">
-                <span class="lang-zh">句子区：</span><span class="lang-ru">Зона для предложений:</span>
-            </div>
-            <div id="sentence-box-${question.id}" class="word-box-container sentence-box">${sentenceWordsHTML}</div>
-        </div>
-        <div class="word-pool-area">
-            <div class="word-pool-prompt">
-                <span class="lang-zh">备选词库：</span><span class="lang-ru">Банк слов:</span>
-            </div>
-            <div class="word-pool-grid">
-                ${Object.keys(question.wordPool).map(category => `
-                    <div class="word-category">
-                        <h4 class="category-title">${category}</h4>
-                        <div id="pool-${question.id}-${category.replace(/\s|[()/]/g, '')}" class="word-box-container word-pool">
-                            ${question.wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
+        <div class="sentence-area"><div class="sentence-prompt"><span class="lang-zh">句子区：</span><span class="lang-ru">Зона для предложений:</span></div><div id="sentence-box-${question.id}" class="word-box-container sentence-box">${sentenceWordsHTML}</div></div>
+        <div class="word-pool-area"><div class="word-pool-prompt"><span class="lang-zh">备选词库：</span><span class="lang-ru">Банк слов:</span></div><div class="word-pool-grid">${Object.keys(question.wordPool).map(category => `<div class="word-category"><h4 class="category-title">${category}</h4><div id="pool-${question.id}-${category.replace(/\s|[()/]/g, '')}" class="word-box-container word-pool">${question.wordPool[category].map(word => `<div class="word-block">${word}</div>`).join('')}</div></div>`).join('')}</div></div>
         ${buildAnswerSectionHTML(question)}
     `;
 }
@@ -222,14 +231,13 @@ function initializeSortable(question) {
     const questionId = question.id;
     const sentenceBox = document.getElementById(`sentence-box-${questionId}`);
     if (!sentenceBox) return;
-    
     if (question.type === 'sort') {
         new Sortable(sentenceBox, { animation: 150 });
     } else {
         const wordPools = document.querySelectorAll(`#question-${questionId} .word-pool`);
         const groupName = `group-${questionId}`;
         new Sortable(sentenceBox, {
-            group: groupName, 
+            group: groupName,
             animation: 150,
             onMove: evt => !(evt.dragged.classList.contains('core-word') && evt.to.classList.contains('word-pool'))
         });
@@ -238,9 +246,7 @@ function initializeSortable(question) {
                 group: { name: groupName, pull: 'clone', put: true },
                 animation: 150,
                 sort: false,
-                onAdd: function (evt) {
-                    if (evt.to !== sentenceBox) { evt.item.remove(); }
-                }
+                onAdd: function (evt) { if (evt.to !== sentenceBox) { evt.item.remove(); } }
             });
         });
     }
