@@ -9,11 +9,11 @@ h1, h2, h3, h4 { text-align: center; }
 .lesson-link:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
 .lesson-link .lang-zh { color: #0056b3; font-size: 1.25em; font-weight: bold; }
 
-/* --- 游戏页样式 --- */
-.header { width: 90%; max-width: 1000px; background-color: #fff; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
+/* --- 游戏页样式 (已加宽) --- */
+.header { width: 95%; max-width: 1400px; background-color: #fff; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
 .header p { text-align: center; }
 #game-board { width: 100%; display: flex; flex-direction: column; gap: 30px; }
-.question-container { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; width: 90%; max-width: 1000px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+.question-container { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; width: 95%; max-width: 1400px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
 .question-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; }
 .question-header .lang-zh { font-size: 1.5em; font-weight: bold; }
 .question-header .lang-ru { font-size: 1.2em; }
@@ -31,7 +31,7 @@ h1, h2, h3, h4 { text-align: center; }
 .word-block:active { cursor: grabbing; }
 .word-block.core-word-reference { background-color: #fffbe6; color: #856404; border: 1px solid #ffeeba; cursor: default; }
 .sentence-box .word-block.core-word { background-color: #fffbe6; color: #856404; border: 1px solid #ffeeba; }
-.final-submission-container { width: 90%; max-width: 1000px; margin: 30px auto 0 auto; padding: 25px; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+.final-submission-container { width: 95%; max-width: 1400px; margin: 30px auto 0 auto; padding: 25px; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
 .generate-link-btn { background-color: #28a745; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; transition: background-color 0.2s; }
 .generate-link-btn:hover { background-color: #218838; }
 .result-link-input { width: 95%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #f8f9fa; font-size: 1em; }
@@ -60,8 +60,8 @@ h1, h2, h3, h4 { text-align: center; }
 .lesson-group { display: flex; flex-direction: column; gap: 15px; padding-top: 15px; overflow: hidden; max-height: 2000px; transition: max-height 0.5s ease-in-out, padding-top 0.5s ease-in-out; }
 .lesson-group.collapsed { max-height: 0; padding-top: 0; }
 
-/* --- 单词卡片测试样式 --- */
-.flashcard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; width: 90%; max-width: 1000px; margin: 20px auto; }
+/* --- 单词卡片测试样式 (已加宽) --- */
+.flashcard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; width: 95%; max-width: 1400px; margin: 20px auto; }
 .flashcard { background-color: #ffffff; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; text-align: center; user-select: none; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
 .flashcard:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
 .flashcard-zh { font-size: 1.8em; font-weight: bold; color: #0056b3; line-height: 1.3; }
